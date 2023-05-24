@@ -6,15 +6,12 @@ from tensorflow.keras.applications.resnet50 import ResNet50
 from tensorflow.keras.layers import Dense, GlobalAveragePooling2D
 from tensorflow.keras.models import Model
 
-# 设置随机数种子
 np.random.seed(42)
 tf.random.set_seed(42)
 
-# 定义数据集路径
 train_path = "spamassassin.apache/train"
 valid_path = "spamassassin.apache/valid"
 
-# 定义图像生成器
 train_datagen = ImageDataGenerator(rescale=1./255,
                                    rotation_range=20,
                                    width_shift_range=0.2,
@@ -25,7 +22,6 @@ train_datagen = ImageDataGenerator(rescale=1./255,
                                    fill_mode='nearest')
 valid_datagen = ImageDataGenerator(rescale=1./255)
 
-# 定义训练集和验证集生成器
 train_generator = train_datagen.flow_from_directory(train_path,
                                                     target_size=(224, 224),
                                                     batch_size=32,
@@ -35,7 +31,6 @@ valid_generator = valid_datagen.flow_from_directory(valid_path,
                                                     batch_size=32,
                                                     class_mode='binary')
 
-# 定义ResNet50模型
 base_model = ResNet50(weights='imagenet', include_top=False)
 x = base_model.output
 x = GlobalAveragePooling2D()(x)
@@ -43,15 +38,11 @@ x = Dense(1024, activation='relu')(x)
 predictions = Dense(1, activation='sigmoid')(x)
 model = Model(inputs=base_model.input, outputs=predictions)
 
-# 冻结ResNet50模型的前面几层
 for layer in base_model.layers:
     layer.trainable = False
 
-# 编译模型
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
-# 训练模型
 model.fit(train_generator, epochs=10, validation_data=valid_generator)
 
-# 保存模型
 model.save('spam_detection_model.h5')
